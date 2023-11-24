@@ -1,0 +1,20 @@
+[package]
+name = "cnc_api"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+diesel = { version = "1.4.8", features = ["postgres", "uuidv07", "chrono"] }
+tokio = { version = "1", features = ["full"] }
+uuid = { version = "0.8", features = ["serde", "v4"] }
+dotenv = "0.15"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+actix-web = "4.0"
+actix-rt = "2.5"
+chrono = "0.4"
+
+
+

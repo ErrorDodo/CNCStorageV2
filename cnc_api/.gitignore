@@ -1,0 +1,21 @@
+# Compiled files
+/target/
+
+# Remove Cargo.lock from gitignore if creating an executable, leave it for libraries
+# More information: https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html
+/Cargo.lock
+
+# Ignore IDE project files, comment out if necessary
+/.idea/
+/.vscode/
+*.swp
+*.swo
+
+# Ignore macOS specific files
+.DS_Store
+
+# Ignore environment configuration files
+.env
+
+# Ignore backup files
+*~
