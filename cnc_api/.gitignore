@@ -19,3 +19,6 @@
 
 # Ignore backup files
 *~
+
+# Ingore log files
+/logs

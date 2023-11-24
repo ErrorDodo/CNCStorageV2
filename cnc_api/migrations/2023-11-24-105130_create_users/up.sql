@@ -7,7 +7,7 @@ CREATE TABLE users (
     password_salt TEXT NOT NULL,
     auth_token TEXT NOT NULL,
     date_registered TIMESTAMP NOT NULL,
-    invited_by_user_id UUID,
+    invited_by_user_id UUID NOT NULL,
     is_admin BOOLEAN NOT NULL,
     is_moderator BOOLEAN NOT NULL,
     FOREIGN KEY (invited_by_user_id) REFERENCES users(user_id)
