@@ -6,7 +6,7 @@ diesel::table! {
         generated_by_user_id -> Uuid,
         has_been_used -> Bool,
         date_used -> Nullable<Timestamp>,
-        used_by_user_id -> Uuid,
+        used_by_user_id -> Nullable<Uuid>,
         invite_code -> Text,
     }
 }
@@ -56,4 +56,9 @@ diesel::table! {
 diesel::joinable!(pictures -> users (uploaded_by_user_id));
 diesel::joinable!(videos -> users (uploaded_by_user_id));
 
-diesel::allow_tables_to_appear_in_same_query!(invites, pictures, users, videos,);
+diesel::allow_tables_to_appear_in_same_query!(
+    invites,
+    pictures,
+    users,
+    videos,
+);

@@ -1,4 +1,5 @@
 use crate::db::{establish_connection, DbPool};
+use crate::routes::invites::general::handle_invite_actions;
 use crate::routes::users::general::handle_user_actions;
 use actix_web::web::Data;
 use actix_web::{web, App, HttpServer};
@@ -27,13 +28,27 @@ async fn main() -> std::io::Result<()> {
     info!("Database connection established");
 
     info!("Starting server at http://127.0.0.1:8080");
+    get_routes();
 
     HttpServer::new(move || {
         App::new()
             .app_data(Data::new(pool.clone()))
             .route("/users/{action}", web::route().to(handle_user_actions))
+            .route("/invites/{action}", web::route().to(handle_invite_actions))
     })
     .bind("127.0.0.1:8080")?
     .run()
     .await
+}
+
+// TODO: Find a better way to do this
+fn get_routes() {
+    let mut routes: Vec<String> = Vec::new();
+
+    routes.push("/users/{action}".to_string());
+    routes.push("/invites/{action}".to_string());
+
+    for route in routes {
+        info!("Registered route: {}", route);
+    }
 }
