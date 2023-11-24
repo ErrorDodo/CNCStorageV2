@@ -13,7 +13,7 @@ pub struct User {
     pub password_salt: String,
     pub auth_token: String,
     pub date_registered: NaiveDateTime,
-    pub invited_by_user_id: Option<Uuid>,
+    pub invited_by_user_id: Uuid,
     pub is_admin: bool,
     pub is_moderator: bool,
 }
@@ -26,7 +26,7 @@ pub struct NewUser<'a> {
     pub password_salt: &'a str,
     pub auth_token: &'a str,
     pub date_registered: NaiveDateTime,
-    pub invited_by_user_id: Option<Uuid>,
+    pub invited_by_user_id: Uuid,
     pub is_admin: bool,
     pub is_moderator: bool,
 }
@@ -35,5 +35,5 @@ pub struct NewUser<'a> {
 pub struct UserDTO {
     pub username: String,
     pub password: String,
-    pub invited_by_user_id: Option<Uuid>,
+    pub invited_by_user_id: Uuid,
 }

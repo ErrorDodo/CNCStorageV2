@@ -15,9 +15,15 @@ mod schema;
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
     log4rs::init_file("log4rs.yml", Default::default()).unwrap();
+    info!("Starting CNC API");
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let pool: DbPool = establish_connection(&database_url);
+    let pool: DbPool = match establish_connection(&database_url) {
+        Ok(pool) => pool,
+        Err(err) => {
+            panic!("Failed to establish database connection: {}", err);
+        }
+    };
     info!("Database connection established");
 
     info!("Starting server at http://127.0.0.1:8080");
