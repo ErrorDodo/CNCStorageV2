@@ -1,12 +1,10 @@
+use crate::schema::users;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use diesel::Associations;
-use diesel::Identifiable;
-use diesel::Queryable;
 use uuid::Uuid;
 
 #[derive(Queryable, Identifiable)]
-#[table_name = "users"]
+#[diesel(table_name = users)]
 pub struct User {
     pub id: Uuid,
     pub username: String,

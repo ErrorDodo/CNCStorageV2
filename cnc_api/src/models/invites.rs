@@ -1,16 +1,15 @@
 use crate::models::users::User;
+use crate::schema::invites;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use diesel::Associations;
-use diesel::Identifiable;
-use diesel::Queryable;
 use uuid::Uuid;
 
 #[derive(Queryable, Identifiable, Associations)]
-#[belongs_to(User, foreign_key = "generated_by_user_id")]
-#[table_name = "invites"]
+#[diesel(table_name = invites)]
+#[diesel(primary_key(invite_id))]
+#[diesel(belongs_to(User, foreign_key = generated_by_user_id))]
 pub struct Invite {
-    pub id: Uuid,
+    pub invite_id: Uuid,
     pub generated_by_user_id: Uuid,
     pub has_been_used: bool,
     pub date_used: Option<NaiveDateTime>,

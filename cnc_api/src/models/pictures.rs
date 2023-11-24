@@ -1,16 +1,15 @@
 use crate::models::users::User;
+use crate::schema::pictures;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use diesel::Associations;
-use diesel::Identifiable;
-use diesel::Queryable;
 use uuid::Uuid;
 
 #[derive(Queryable, Identifiable, Associations)]
-#[belongs_to(User, foreign_key = "uploaded_by_user_id")]
-#[table_name = "pictures"]
+#[diesel(primary_key(picture_id))]
+#[diesel(belongs_to(User, foreign_key = uploaded_by_user_id))]
+#[diesel(table_name = pictures)]
 pub struct Picture {
-    pub id: Uuid,
+    pub picture_id: Uuid,
     pub uploaded_by_user_id: Uuid,
     pub upload_date: NaiveDateTime,
     pub file_url: String,
