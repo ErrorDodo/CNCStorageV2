@@ -19,6 +19,7 @@ log4rs = { version = "1.2.0", features = ["gzip"]}
 log = "0.4"
 jsonwebtoken = "7.2.0"
 bcrypt = "0.15"
+futures = "0.3"
 
 
 

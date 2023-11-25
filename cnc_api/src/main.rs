@@ -1,8 +1,7 @@
 use crate::db::{establish_connection, DbPool};
-use crate::routes::invites::general::handle_invite_actions;
-use crate::routes::users::general::{handle_add_user, handle_login_user};
+use crate::routes::users::general::user_scope;
 use actix_web::web::Data;
-use actix_web::{web, App, HttpServer};
+use actix_web::{App, HttpServer};
 use dotenv::dotenv;
 use log::info;
 use std::env;
@@ -26,14 +25,11 @@ async fn main() -> std::io::Result<()> {
     info!("Starting server at http://127.0.0.1:8080");
     info!("Registered route: /users/add");
     info!("Registered route: /users/login");
-    info!("Registered route: /invites");
 
     HttpServer::new(move || {
         App::new()
             .app_data(Data::new(pool.clone()))
-            .route("/users/add", web::post().to(handle_add_user))
-            .route("/users/login", web::post().to(handle_login_user))
-            .route("/invites", web::route().to(handle_invite_actions))
+            .service(user_scope())
     })
     .bind("127.0.0.1:8080")?
     .run()
