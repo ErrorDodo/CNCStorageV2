@@ -1,19 +1,22 @@
+use crate::models::users::UserLoginDTO;
 use crate::routes::users::add_user::create_user;
-use actix_web::{http::Method, HttpRequest, HttpResponse, Responder};
+use crate::routes::users::login_user::login_user;
+use crate::{db::DbPool, models::users::UserDTO};
+use actix_web::{web, Responder};
 use log::info;
 
-pub async fn handle_user_actions(req: HttpRequest) -> impl Responder {
-    info!(
-        "handle_user_actions called with method: {}, path: {}",
-        req.method(),
-        req.path()
-    );
+pub async fn handle_add_user(
+    payload: web::Json<UserDTO>,
+    pool: web::Data<DbPool>,
+) -> impl Responder {
+    info!("Handling add user action");
+    create_user(payload, pool).await
+}
 
-    match req.path() {
-        "/users/add" if req.method() == Method::POST => create_user().await,
-        // Add other paths and methods here, e.g., "/users/remove", "/users/list", etc.
-        // "/users/remove" if req.method() == Method::DELETE => remove_user().await,
-        // "/users/list" if req.method() == Method::GET => list_users().await,
-        _ => HttpResponse::MethodNotAllowed().body("Method Not Allowed or Path Not Recognized"),
-    }
+pub async fn handle_login_user(
+    payload: web::Json<UserLoginDTO>,
+    pool: web::Data<DbPool>,
+) -> impl Responder {
+    info!("Handling login user action");
+    login_user(payload, pool).await
 }

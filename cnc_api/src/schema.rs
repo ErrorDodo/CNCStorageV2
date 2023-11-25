@@ -30,10 +30,8 @@ diesel::table! {
         #[max_length = 255]
         username -> Varchar,
         password_hash -> Text,
-        password_salt -> Text,
-        auth_token -> Text,
         date_registered -> Timestamp,
-        invited_by_user_id -> Uuid,
+        invited_by_user_id -> Nullable<Uuid>,
         is_admin -> Bool,
         is_moderator -> Bool,
     }
