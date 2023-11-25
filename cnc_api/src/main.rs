@@ -1,4 +1,5 @@
 use crate::db::{establish_connection, DbPool};
+use crate::routes::invites::general::invite_scope;
 use crate::routes::users::general::user_scope;
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
@@ -30,6 +31,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(Data::new(pool.clone()))
             .service(user_scope())
+            .service(invite_scope())
     })
     .bind("127.0.0.1:8080")?
     .run()
