@@ -20,6 +20,7 @@ pub async fn login_user(
         Ok(user) => {
             if verify(&login_dto.password, &user.password_hash).unwrap_or(false) {
                 let token = generate_jwt(user.id);
+                info!("Login successful: {}", login_dto.username);
 
                 Ok(HttpResponse::Ok().json(token))
             } else {
@@ -29,6 +30,7 @@ pub async fn login_user(
         }
         Err(e) => {
             info!("Login failed: {}", e);
+            info!("Login for user {} failed", login_dto.username);
             Ok(HttpResponse::Unauthorized().body("Invalid username or password"))
         }
     }

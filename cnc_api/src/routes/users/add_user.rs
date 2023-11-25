@@ -28,7 +28,10 @@ pub async fn create_user(
         .values(&new_user)
         .execute(&mut *conn)
     {
-        Ok(_) => Ok(HttpResponse::Ok().json("User created successfully")),
+        Ok(_) => {
+            info!("User created successfully: {}", user_dto.username,);
+            Ok(HttpResponse::Ok().json("User created successfully"))
+        }
         Err(e) => {
             info!("Error creating user: {}", e);
             Ok(HttpResponse::InternalServerError().body(format!("Error creating user: {}", e)))
