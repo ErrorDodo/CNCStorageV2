@@ -5,7 +5,7 @@ use crate::{db::DbPool, models::users::UserLoginDTO};
 use actix_web::{web, HttpResponse, Result};
 use bcrypt::verify;
 use diesel::prelude::*;
-use log::info;
+use log::{error, info};
 
 pub async fn login_user(
     login_dto: web::Json<UserLoginDTO>,
@@ -29,8 +29,8 @@ pub async fn login_user(
             }
         }
         Err(e) => {
-            info!("Login failed: {}", e);
-            info!("Login for user {} failed", login_dto.username);
+            error!("Login failed: {}", e);
+            error!("Login for user {} failed", login_dto.username);
             Ok(HttpResponse::Unauthorized().body("Invalid username or password"))
         }
     }

@@ -4,7 +4,7 @@ use crate::{db::DbPool, models::users::UserDTO};
 use actix_web::{web, HttpResponse, Result};
 use bcrypt::{hash, DEFAULT_COST};
 use diesel::prelude::*;
-use log::info;
+use log::{error, info};
 
 pub async fn create_user(
     user_dto: web::Json<UserDTO>,
@@ -33,7 +33,7 @@ pub async fn create_user(
             Ok(HttpResponse::Ok().json("User created successfully"))
         }
         Err(e) => {
-            info!("Error creating user: {}", e);
+            error!("Error creating user: {}", e);
             Ok(HttpResponse::InternalServerError().body(format!("Error creating user: {}", e)))
         }
     }
