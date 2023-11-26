@@ -5,6 +5,8 @@ use std::env;
 use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
 
+use super::errors::auth::AuthError;
+
 pub fn generate_jwt(user_id: Uuid) -> String {
     let expiration = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -35,4 +37,15 @@ pub fn validate_jwt(token: &str) -> Result<Claims, JwtError> {
         &Validation::default(),
     )
     .map(|data| data.claims)
+}
+
+pub fn extract_jwt_from_request(request: &actix_web::HttpRequest) -> Result<String, AuthError> {
+    if let Some(auth_header) = request.headers().get("Authorization") {
+        if let Ok(auth_str) = auth_header.to_str() {
+            if auth_str.starts_with("Bearer ") {
+                return Ok(auth_str[7..].to_string());
+            }
+        }
+    }
+    Err(AuthError::new("JWT not found in the Authorization header"))
 }
