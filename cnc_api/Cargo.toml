@@ -3,11 +3,8 @@ name = "cnc_api"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 diesel = { version = "2.1.0", features = ["postgres", "uuid", "chrono", "r2d2"] }
-actix-4-jwt-auth = { git = "https://github.com/spectare/actix-4-jwt-auth", branch = "main" }
 tokio = { version = "1", features = ["full"] }
 uuid = { version = "0.8", features = ["serde", "v4"] }
 dotenv = "0.15"
@@ -16,15 +13,13 @@ serde_json = "1.0"
 actix-web = "4.0"
 actix-rt = "2.5"
 chrono = "0.4"
-log4rs = { version = "1.2.0", features = ["gzip"]}
+log4rs = { version = "1.2.0", features = ["gzip"] }
 log = "0.4"
 actix-service = "2.0.2"
-jsonwebtoken = "7.2.0"
+jsonwebtoken = "8.3.0"  # Updated to a single, newer version
 bcrypt = "0.15"
 futures = "0.3"
 futures-util = "0.3.29"
-actix-web-httpauth = "0.8.1"
 actix-web-grants = "3.0.2"
-
-
-
+ring = "0.17.5"
+actix-web-httpauth = "0.8.1"

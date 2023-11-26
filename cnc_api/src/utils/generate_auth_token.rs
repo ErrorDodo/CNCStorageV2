@@ -1,4 +1,6 @@
 use crate::models::jwtmodel::Claims;
+use actix_web::HttpResponse;
+use actix_web_httpauth::extractors::bearer::BearerAuth;
 use jsonwebtoken::{decode, errors::Error as JwtError, DecodingKey, Validation};
 use jsonwebtoken::{encode, EncodingKey, Header};
 use std::env;
@@ -28,15 +30,18 @@ pub fn generate_jwt(user_id: Uuid) -> String {
     .expect("Failed to generate token")
 }
 
-pub fn validate_jwt(token: &str) -> Result<Claims, JwtError> {
+pub async fn validate_jwt_token(auth: BearerAuth) -> Result<(), HttpResponse> {
     let secret_key = env::var("JWT_SECRET_KEY").expect("JWT_SECRET_KEY must be set");
+    let validation = Validation::default();
 
-    decode::<Claims>(
-        token,
+    match decode::<Claims>(
+        &auth.token(),
         &DecodingKey::from_secret(secret_key.as_ref()),
-        &Validation::default(),
-    )
-    .map(|data| data.claims)
+        &validation,
+    ) {
+        Ok(_) => Ok(()),
+        Err(_) => Err(HttpResponse::Unauthorized().body("Invalid or missing token")),
+    }
 }
 
 pub fn extract_jwt_from_request(request: &actix_web::HttpRequest) -> Result<String, AuthError> {
