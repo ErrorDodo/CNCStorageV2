@@ -1,2 +1,1 @@
-mod create_invite;
-pub mod general;
+pub mod create_invite;

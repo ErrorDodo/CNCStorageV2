@@ -1,3 +1,2 @@
-mod add_user;
-pub mod general;
-mod login_user;
+pub mod add_user;
+pub mod login_user;

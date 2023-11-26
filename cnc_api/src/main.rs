@@ -1,6 +1,6 @@
 use crate::db::{establish_connection, DbPool};
-use crate::routes::invites::general::invite_scope;
-use crate::routes::users::general::user_scope;
+use crate::handlers::invites::invite_scope;
+use crate::handlers::users::user_scope;
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
 use dotenv::dotenv;
@@ -8,6 +8,8 @@ use log::info;
 use std::env;
 
 mod db;
+mod handlers;
+mod middleware;
 mod models;
 mod routes;
 mod schema;
