@@ -1,27 +1,24 @@
-use std::env;
-
 use crate::{
     db::DbPool,
-    models::{jwtmodel::Claims, users::UserDTO},
-    utils::generate_auth_token::validate_jwt_token,
+    models::invites::CreateInviteDTO,
+    routes::invites::create_invite::build_invite,
+    utils::{errors::auth::AuthError, generate_auth_token::validate_jwt_token},
 };
 use actix_web::{web, HttpResponse, Responder, Scope};
-use actix_web_httpauth::{extractors::bearer::BearerAuth, middleware::HttpAuthentication};
-use jsonwebtoken::{decode, DecodingKey, Validation};
-use log::info;
+use actix_web_httpauth::extractors::bearer::BearerAuth;
 
 pub fn invite_scope() -> Scope {
     web::scope("/invites").route("/create", web::post().to(handle_create_invite))
 }
 
 async fn handle_create_invite(
-    auth: BearerAuth,
-    payload: web::Json<UserDTO>,
-    pool: web::Data<DbPool>,
+    auth: Option<BearerAuth>,
+    payload: web::Json<CreateInviteDTO>,
+    _pool: web::Data<DbPool>,
 ) -> impl Responder {
-    if let Err(response) = validate_jwt_token(auth).await {
-        return response;
+    match validate_jwt_token(auth).await {
+        Ok(_) => build_invite(payload, _pool).await,
+        Err(AuthError::JwtNotFound) => HttpResponse::Unauthorized().body("JWT token not found"),
+        Err(AuthError::JwtInvalid) => HttpResponse::Unauthorized().body("Invalid JWT token"),
     }
-
-    HttpResponse::Ok().body(format!("Hello, {}!", payload.username))
 }

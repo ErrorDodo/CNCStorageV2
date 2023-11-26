@@ -1,5 +1,10 @@
-use actix_web::HttpResponse;
+use actix_web::{web, HttpResponse};
 
-pub async fn build_invite() -> HttpResponse {
-    HttpResponse::Ok().body("build_invite")
+use crate::{db::DbPool, models::invites::CreateInviteDTO};
+
+pub async fn build_invite(
+    payload: web::Json<CreateInviteDTO>,
+    _pool: web::Data<DbPool>,
+) -> HttpResponse {
+    HttpResponse::Ok().body(format!("Creating invite for user: {}", payload.username))
 }

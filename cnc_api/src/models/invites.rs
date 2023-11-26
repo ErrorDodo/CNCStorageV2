@@ -2,6 +2,7 @@ use crate::models::users::User;
 use crate::schema::invites;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
+use serde::Deserialize;
 use uuid::Uuid;
 
 #[derive(Queryable, Identifiable, Associations)]
@@ -15,4 +16,19 @@ pub struct Invite {
     pub date_used: Option<NaiveDateTime>,
     pub used_by_user_id: Option<Uuid>,
     pub invite_code: String,
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = invites)]
+pub struct NewInvite<'a> {
+    pub generated_by_user_id: Uuid,
+    pub has_been_used: bool,
+    pub date_used: Option<NaiveDateTime>,
+    pub used_by_user_id: Option<Uuid>,
+    pub invite_code: &'a str,
+}
+
+#[derive(Deserialize)]
+pub struct CreateInviteDTO {
+    pub username: String,
 }
