@@ -19,7 +19,7 @@ pub async fn login_user(
     {
         Ok(user) => {
             if verify(&login_dto.password, &user.password_hash).unwrap_or(false) {
-                let token = generate_jwt(user.id);
+                let token = generate_jwt(user.id, login_dto.username.clone());
                 info!("Login successful: {}", login_dto.username);
 
                 Ok(HttpResponse::Ok().json(token))

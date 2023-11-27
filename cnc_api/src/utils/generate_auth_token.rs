@@ -1,5 +1,6 @@
 use crate::models::jwtmodel::Claims;
 use actix_web_httpauth::extractors::bearer::BearerAuth;
+use jsonwebtoken::errors::ErrorKind;
 use jsonwebtoken::{decode, DecodingKey, Validation};
 use jsonwebtoken::{encode, EncodingKey, Header};
 use std::env;
@@ -8,7 +9,7 @@ use uuid::Uuid;
 
 use super::errors::auth::AuthError;
 
-pub fn generate_jwt(user_id: Uuid) -> String {
+pub fn generate_jwt(user_id: Uuid, username: String) -> String {
     let expiration = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .expect("Time went backwards")
@@ -18,6 +19,7 @@ pub fn generate_jwt(user_id: Uuid) -> String {
     let claims = Claims {
         sub: user_id,
         exp: expiration as usize,
+        username: username,
     };
 
     let secret_key = env::var("JWT_SECRET_KEY").expect("JWT_SECRET_KEY must be set");
@@ -29,7 +31,7 @@ pub fn generate_jwt(user_id: Uuid) -> String {
     .expect("Failed to generate token")
 }
 
-pub async fn validate_jwt_token(auth: Option<BearerAuth>) -> Result<(), AuthError> {
+pub async fn validate_jwt_token(auth: Option<BearerAuth>) -> Result<Claims, AuthError> {
     let secret_key = env::var("JWT_SECRET_KEY").expect("JWT_SECRET_KEY must be set");
     let validation = Validation::default();
 
@@ -43,8 +45,12 @@ pub async fn validate_jwt_token(auth: Option<BearerAuth>) -> Result<(), AuthErro
         &DecodingKey::from_secret(secret_key.as_ref()),
         &validation,
     ) {
-        Ok(_) => Ok(()),
-        Err(_) => Err(AuthError::JwtInvalid),
+        Ok(token_data) => Ok(token_data.claims),
+        Err(error) => match *error.kind() {
+            ErrorKind::InvalidToken => Err(AuthError::JwtInvalid), // Token is invalid
+            ErrorKind::ExpiredSignature => Err(AuthError::JwtInvalid), // Expired Token
+            _ => Err(AuthError::JwtInvalid),                       // Some other error
+        },
     }
 }
 

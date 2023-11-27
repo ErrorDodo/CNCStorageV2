@@ -3,6 +3,7 @@ use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Claims {
-    pub sub: Uuid,  // Subject (user identifier)
-    pub exp: usize, // Expiry (as a timestamp)
+    pub sub: Uuid,        // Subject (user identifier)
+    pub exp: usize,       // Expiry (as a timestamp)
+    pub username: String, // Username
 }
