@@ -18,3 +18,15 @@ pub struct Picture {
     pub resolution: String,
     pub tags: Vec<String>,
 }
+
+#[derive(Insertable)]
+#[table_name = "pictures"]
+pub struct NewPicture {
+    pub uploaded_by_user_id: Uuid,
+    pub upload_date: NaiveDateTime,
+    pub file_url: String,
+    pub file_size: i64,
+    pub file_format: String,
+    pub resolution: String,
+    pub tags: Vec<String>,
+}
