@@ -18,7 +18,10 @@ mod utils;
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
-    log4rs::init_file("log4rs.yml", Default::default()).unwrap();
+    if let Err(e) = log4rs::init_file("log4rs.yml", Default::default()) {
+        eprintln!("Failed to initialize logger: {}", e);
+        std::process::exit(1);
+    }
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let mut connection_attempts = 0;

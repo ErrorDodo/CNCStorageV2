@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug Rust",
+            "program": "${workspaceFolder}/cnc_api/target/debug/cnc_api.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}/cnc_api",
+            "env": {
+                "RUST_BACKTRACE": "1"
+            }
+        }
+    ]
+}
