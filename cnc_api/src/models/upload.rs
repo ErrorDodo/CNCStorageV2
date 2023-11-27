@@ -2,7 +2,6 @@ use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct UploadDTO {
-    pub file_format: String,
     pub resolution: String,
     pub tags: Vec<String>,
 

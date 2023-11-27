@@ -3,7 +3,7 @@ use actix_web::{web, HttpResponse, Responder, Scope};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use futures_util::{StreamExt, TryStreamExt};
 use infer;
-use log::{info, warn};
+use log::{error, info, warn};
 
 use crate::{
     db::DbPool,
@@ -23,17 +23,20 @@ async fn handle_upload_file(
 ) -> impl Responder {
     match validate_jwt_token(auth).await {
         Ok(claims) => {
-            info!("User {} authenticated", claims.sub);
+            info!("User {} authenticated", claims.username);
             let mut upload_dto: Option<UploadDTO> = None;
             let mut file_data = Vec::new();
+            let mut file_name: Option<String> = None;
 
             while let Ok(Some(mut field)) = payload.try_next().await {
                 let content_disposition = field.content_disposition();
                 let field_name = content_disposition.get_name().unwrap_or("");
 
+                info!("Field name: {}", field_name);
                 if field_name == "metadata" {
                     let mut data = Vec::new();
                     while let Some(chunk) = field.next().await {
+                        info!("Reading metadata chunk");
                         match chunk {
                             Ok(data_chunk) => data.extend_from_slice(&data_chunk),
                             Err(e) => {
@@ -45,6 +48,7 @@ async fn handle_upload_file(
                     }
                     upload_dto = serde_json::from_slice(&data).ok();
                 } else if field_name == "file" {
+                    file_name = content_disposition.get_filename().map(String::from);
                     while let Some(chunk) = field.next().await {
                         match chunk {
                             Ok(data_chunk) => file_data.extend_from_slice(&data_chunk),
@@ -62,17 +66,24 @@ async fn handle_upload_file(
                         info!("File type: {}", file_type_str);
                         match file_type_str {
                             "image/png" | "image/jpeg" | "image/gif" => {
-                                if let Err(e) = upload_image(
+                                match upload_image(
                                     &upload_dto,
                                     &claims,
                                     file_data.clone(),
                                     &file_type_str.to_string(),
+                                    file_name,
                                     pool.clone(),
                                 )
                                 .await
                                 {
-                                    return HttpResponse::InternalServerError()
-                                        .json(format!("Error uploading image: {}", e));
+                                    Ok(response) => {
+                                        return response;
+                                    }
+                                    Err(e) => {
+                                        error!("Error uploading image: {}", e);
+                                        return HttpResponse::InternalServerError()
+                                            .json(format!("Error uploading image: {}", e));
+                                    }
                                 }
                             }
                             "video/mp4" | "video/mpeg" => {
@@ -86,6 +97,8 @@ async fn handle_upload_file(
                 }
             }
 
+            info!("File upload process completed successfully");
+            // Consider this a default message
             HttpResponse::Ok().body("File uploaded successfully")
         }
         Err(AuthError::JwtNotFound) => HttpResponse::Unauthorized().body("JWT token not found"),

@@ -10,6 +10,7 @@ use uuid::Uuid;
 #[diesel(table_name = videos)]
 pub struct Video {
     pub video_id: Uuid,
+    pub file_name: String,
     pub uploaded_by_user_id: Uuid,
     pub upload_date: NaiveDateTime,
     pub file_url: String,

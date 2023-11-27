@@ -10,6 +10,7 @@ use uuid::Uuid;
 #[diesel(table_name = pictures)]
 pub struct Picture {
     pub picture_id: Uuid,
+    pub file_name: String,
     pub uploaded_by_user_id: Uuid,
     pub upload_date: NaiveDateTime,
     pub file_url: String,
@@ -20,8 +21,9 @@ pub struct Picture {
 }
 
 #[derive(Insertable)]
-#[table_name = "pictures"]
+#[diesel(table_name = pictures)]
 pub struct NewPicture {
+    pub file_name: String,
     pub uploaded_by_user_id: Uuid,
     pub upload_date: NaiveDateTime,
     pub file_url: String,

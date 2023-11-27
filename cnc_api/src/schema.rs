@@ -21,6 +21,7 @@ diesel::table! {
         file_format -> Text,
         resolution -> Text,
         tags -> Nullable<Array<Nullable<Text>>>,
+        file_name -> Text,
     }
 }
 
@@ -48,15 +49,11 @@ diesel::table! {
         duration -> Interval,
         resolution -> Text,
         tags -> Nullable<Array<Nullable<Text>>>,
+        file_name -> Text,
     }
 }
 
 diesel::joinable!(pictures -> users (uploaded_by_user_id));
 diesel::joinable!(videos -> users (uploaded_by_user_id));
 
-diesel::allow_tables_to_appear_in_same_query!(
-    invites,
-    pictures,
-    users,
-    videos,
-);
+diesel::allow_tables_to_appear_in_same_query!(invites, pictures, users, videos,);
