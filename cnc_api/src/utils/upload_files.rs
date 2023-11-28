@@ -1,6 +1,10 @@
-use azure_core::error::Error;
+use azure_core::{
+    error::{Error, HttpError},
+    StatusCode,
+};
 use azure_storage::prelude::*;
 use azure_storage_blobs::prelude::*;
+use log::error;
 
 pub async fn upload_to_azure(
     file_data: &[u8],
@@ -17,24 +21,34 @@ pub async fn upload_to_azure(
     let container_client = BlobServiceClient::new(account.clone(), storage_credentials)
         .container_client(container_name.clone());
 
-    // We use public access here so that we can access the images from the frontend
-    // We don't need it on the container level as the backend can access the containers regardless
-    container_client
+    let create_container_result = container_client
         .create()
         .public_access(PublicAccess::Blob)
-        .await?;
+        .await;
+    if let Err(e) = create_container_result {
+        let http_error = e.downcast_ref::<HttpError>();
+        if http_error.map(|e| e.status()) != Some(StatusCode::Conflict) {
+            error!("Error creating container: {}", e);
+            return Err(e);
+        }
+    }
 
     let blob_name = format!("{}", file_name);
     let data_owned = file_data.to_owned();
 
-    container_client
+    match container_client
         .blob_client(blob_name.clone())
         .put_block_blob(data_owned)
         .content_type(file_type)
-        .await?;
-
-    Ok(format!(
-        "https://{}.blob.core.windows.net/{}/{}",
-        account, container_name, blob_name
-    ))
+        .await
+    {
+        Ok(_) => Ok(format!(
+            "https://{}.blob.core.windows.net/{}/{}",
+            account, container_name, blob_name
+        )),
+        Err(e) => {
+            error!("Error uploading blob: {}", e);
+            Err(e)
+        }
+    }
 }
