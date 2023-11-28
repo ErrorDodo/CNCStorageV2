@@ -1,5 +1,5 @@
 use crate::models::invites::Invite;
-use crate::models::users::NewUser;
+use crate::models::users::{NewUser, User};
 use crate::schema::{invites, users};
 use crate::{db::DbPool, models::users::UserDTO};
 use actix_web::{web, HttpResponse};
@@ -17,6 +17,16 @@ pub async fn create_user(
 
     let created_user_info = conn
         .transaction::<_, DieselError, _>(|conn| {
+            let existing_user = users::table
+                .filter(users::columns::username.eq(&user_dto.username))
+                .first::<User>(conn)
+                .optional()?;
+
+            if existing_user.is_some() {
+                error!("Username already taken");
+                return Err(DieselError::NotFound);
+            }
+
             let invite = invites::table
                 .filter(invites::columns::invite_code.eq(&user_dto.invite_code))
                 .first::<Invite>(conn)?;

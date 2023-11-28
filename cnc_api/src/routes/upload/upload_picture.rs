@@ -4,11 +4,9 @@ use crate::{
     db::DbPool,
     models::{jwtmodel::Claims, pictures::NewPicture, upload::UploadDTO},
     schema::pictures,
+    utils::upload_files::upload_to_azure,
 };
 use actix_web::{web, HttpResponse};
-use azure_core::error::Error;
-use azure_storage::prelude::*;
-use azure_storage_blobs::prelude::*;
 use diesel::prelude::*;
 use log::{error, info};
 use std::convert::From;
@@ -80,43 +78,4 @@ pub async fn upload_image(
         info!("No DTO provided, skipping database insertion");
         return Ok(HttpResponse::Ok().json("Could not insert records into database"));
     }
-}
-
-async fn upload_to_azure(
-    file_data: &[u8],
-    file_name: String,
-    file_type: &String,
-    user: String,
-) -> Result<String, Error> {
-    // Retrieve environment variables
-    let account = std::env::var("AZURE_STORAGE_ACCOUNT").expect("Missing Azure Storage Account");
-    let access_key =
-        std::env::var("AZURE_STORAGE_ACCESS_KEY").expect("Missing Azure Storage Access Key");
-    let container_name = std::env::var("AZURE_STORAGE_CONTAINER_NAME")
-        .expect("Missing Azure Storage Container Name");
-
-    // Format the blob name
-    let blob_name = format!("{}-{}", user, file_name);
-
-    // Create storage credentials
-    let storage_credentials = StorageCredentials::access_key(account.clone(), access_key);
-
-    // Create a blob client
-    let blob_client = ClientBuilder::new(account.clone(), storage_credentials)
-        .blob_client(&container_name, &blob_name);
-
-    let data_owned = file_data.to_owned();
-
-    // Upload the blob
-    blob_client
-        .put_block_blob(data_owned)
-        .content_type(file_type)
-        .await?;
-
-    // Return the URL of the uploaded blob
-    // example url is https://arkdylsttest.blob.core.windows.net/test/Dodo-shylily.gif
-    Ok(format!(
-        "https://{}.blob.core.windows.net/{}/{}",
-        account, container_name, blob_name
-    ))
 }
