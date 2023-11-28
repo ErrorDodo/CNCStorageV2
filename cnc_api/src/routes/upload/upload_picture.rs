@@ -53,7 +53,7 @@ pub async fn upload_image(
             file_size: file_data.len() as i64,
             file_format: file_type.to_string(),
             resolution: dto.resolution.clone(),
-            tags: dto.tags.clone(),
+            tags: Some(dto.tags.iter().map(|tag| Some(tag.clone())).collect()),
         };
 
         match diesel::insert_into(pictures::table)

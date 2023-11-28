@@ -1,5 +1,6 @@
 use crate::db::{establish_connection, DbPool};
 use crate::handlers::account::account_scope;
+use crate::handlers::files::files_scope;
 use crate::handlers::invites::invite_scope;
 use crate::handlers::upload::upload_scope;
 use actix_web::web::Data;
@@ -70,6 +71,7 @@ async fn main() -> std::io::Result<()> {
             .service(account_scope())
             .service(invite_scope())
             .service(upload_scope())
+            .service(files_scope())
     })
     .bind("127.0.0.1:8080")?
     .run()
