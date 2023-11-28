@@ -1,7 +1,9 @@
-use crate::models::users::User;
-use crate::schema::users::dsl::*;
-use crate::utils::generate_auth_token::generate_jwt;
-use crate::{db::DbPool, models::users::UserLoginDTO};
+use crate::{
+    db::DbPool,
+    models::users::{User, UserLoginDTO},
+    schema::users::dsl::*,
+    utils::{generate_auth_token::generate_jwt, log_db::log_event},
+};
 use actix_web::{web, HttpResponse, Result};
 use bcrypt::verify;
 use diesel::prelude::*;
@@ -22,15 +24,44 @@ pub async fn login_user(
                 let token = generate_jwt(user.id, login_dto.username.clone());
                 info!("Login successful: {}", login_dto.username);
 
+                // Log successful login
+                log_event(
+                    pool.clone(),
+                    "Login Success",
+                    Some(user.id),
+                    &format!("User {} logged in successfully", login_dto.username),
+                )
+                .await?;
+
                 Ok(HttpResponse::Ok().json(token))
             } else {
                 info!("Login failed: Invalid username or password");
+
+                // Log failed login attempt
+                log_event(
+                    pool.clone(),
+                    "Login Failure",
+                    None,
+                    &format!("Failed login attempt for username {}", login_dto.username),
+                )
+                .await?;
+
                 Ok(HttpResponse::Unauthorized().body("Invalid username or password"))
             }
         }
         Err(e) => {
             error!("Login failed: {}", e);
             error!("Login for user {} failed", login_dto.username);
+
+            // Log failed login attempt
+            log_event(
+                pool.clone(),
+                "Login Failure",
+                None,
+                &format!("Failed login attempt for username {}", login_dto.username),
+            )
+            .await?;
+
             Ok(HttpResponse::Unauthorized().body("Invalid username or password"))
         }
     }

@@ -1,6 +1,17 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
+    event_logs (event_log_id) {
+        event_log_id -> Uuid,
+        #[max_length = 255]
+        event_type -> Varchar,
+        user_id -> Nullable<Uuid>,
+        timestamp -> Timestamp,
+        details -> Nullable<Text>,
+    }
+}
+
+diesel::table! {
     invites (invite_id) {
         invite_id -> Uuid,
         generated_by_user_id -> Uuid,
@@ -53,7 +64,14 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(event_logs -> users (user_id));
 diesel::joinable!(pictures -> users (uploaded_by_user_id));
 diesel::joinable!(videos -> users (uploaded_by_user_id));
 
-diesel::allow_tables_to_appear_in_same_query!(invites, pictures, users, videos,);
+diesel::allow_tables_to_appear_in_same_query!(
+    event_logs,
+    invites,
+    pictures,
+    users,
+    videos,
+);
