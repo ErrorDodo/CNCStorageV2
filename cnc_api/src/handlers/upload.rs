@@ -8,7 +8,7 @@ use log::{error, info, warn};
 use crate::{
     db::DbPool,
     models::upload::UploadDTO,
-    routes::upload::upload_picture::upload_image,
+    routes::upload::{upload_picture::upload_image, upload_video::upload_video},
     utils::{errors::auth::AuthError, generate_auth_token::validate_jwt_token},
 };
 
@@ -87,7 +87,25 @@ async fn handle_upload_file(
                                 }
                             }
                             "video/mp4" | "video/mpeg" => {
-                                // Process as video
+                                match upload_video(
+                                    &upload_dto,
+                                    &claims,
+                                    file_data.clone(),
+                                    &file_type_str.to_string(),
+                                    file_name,
+                                    pool.clone(),
+                                )
+                                .await
+                                {
+                                    Ok(response) => {
+                                        return response;
+                                    }
+                                    Err(e) => {
+                                        error!("Error uploading video: {}", e);
+                                        return HttpResponse::InternalServerError()
+                                            .json(format!("Error uploading video: {}", e));
+                                    }
+                                }
                             }
                             _ => return HttpResponse::BadRequest().body("Unsupported file type"),
                         }

@@ -57,7 +57,7 @@ diesel::table! {
         file_url -> Text,
         file_size -> Int8,
         file_format -> Text,
-        duration -> Interval,
+        duration -> Int8,
         resolution -> Text,
         tags -> Nullable<Array<Nullable<Text>>>,
         file_name -> Text,

@@ -13,11 +13,7 @@ pub async fn log_event(
 ) -> Result<HttpResponse, actix_web::Error> {
     let mut conn = pool.get().expect("couldn't get db connection from pool");
 
-    let new_event = NewEventLog {
-        event_type: event_type,
-        user_id,
-        details: Some(details),
-    };
+    let new_event = NewEventLog::new(event_type, user_id, Some(details));
 
     match diesel::insert_into(event_logs::table)
         .values(&new_event)

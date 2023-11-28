@@ -56,14 +56,14 @@ pub async fn create_user(
         let hashed_password =
             hash(&user_dto.password, DEFAULT_COST).map_err(|e| CreateUserError::BcryptError(e))?;
 
-        let new_user = NewUser {
-            username: &user_dto.username,
-            password_hash: &hashed_password,
-            date_registered: chrono::Utc::now().naive_utc(),
-            invited_by_user_id: Some(invite.generated_by_user_id),
-            is_admin: false,
-            is_moderator: false,
-        };
+        let new_user = NewUser::new(
+            &user_dto.username,
+            &hashed_password,
+            chrono::Utc::now().naive_utc(),
+            Some(invite.generated_by_user_id),
+            false,
+            false,
+        );
 
         let user_id: Uuid = diesel::insert_into(users::table)
             .values(&new_user)

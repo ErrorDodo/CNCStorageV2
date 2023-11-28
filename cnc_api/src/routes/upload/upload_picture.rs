@@ -45,16 +45,16 @@ pub async fn upload_image(
     let mut conn = pool.get().expect("couldn't get db connection from pool");
 
     if let Some(dto) = upload_dto {
-        let new_picture = NewPicture {
-            uploaded_by_user_id: claims.sub,
-            file_name: file_name_without_extension,
-            upload_date: chrono::Utc::now().naive_utc(),
-            file_url: file_url_string.clone(),
-            file_size: file_data.len() as i64,
-            file_format: file_type.to_string(),
-            resolution: dto.resolution.clone(),
-            tags: Some(dto.tags.iter().map(|tag| Some(tag.clone())).collect()),
-        };
+        let new_picture = NewPicture::new(
+            &file_name_without_extension,
+            claims.sub,
+            chrono::Utc::now().naive_utc(),
+            &file_url_string,
+            file_data.len() as i64,
+            file_type,
+            &dto.resolution,
+            Some(dto.tags.iter().map(|tag| tag.as_str()).collect()),
+        );
 
         match diesel::insert_into(pictures::table)
             .values(&new_picture)

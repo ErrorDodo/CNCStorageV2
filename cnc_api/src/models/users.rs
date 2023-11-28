@@ -28,6 +28,26 @@ pub struct NewUser<'a> {
     pub is_moderator: bool,
 }
 
+impl<'a> NewUser<'a> {
+    pub fn new(
+        username: &'a str,
+        password_hash: &'a str,
+        date_registered: NaiveDateTime,
+        invited_by_user_id: Option<Uuid>,
+        is_admin: bool,
+        is_moderator: bool,
+    ) -> Self {
+        NewUser {
+            username,
+            password_hash,
+            date_registered,
+            invited_by_user_id,
+            is_admin: false,
+            is_moderator: false,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct UserDTO {
     pub username: String,

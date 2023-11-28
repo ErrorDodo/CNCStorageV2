@@ -24,3 +24,13 @@ pub struct NewEventLog<'a> {
     pub user_id: Option<Uuid>,
     pub details: Option<&'a str>,
 }
+
+impl<'a> NewEventLog<'a> {
+    pub fn new(event_type: &'a str, user_id: Option<Uuid>, details: Option<&'a str>) -> Self {
+        NewEventLog {
+            event_type,
+            user_id,
+            details,
+        }
+    }
+}
