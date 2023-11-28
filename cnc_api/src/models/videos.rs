@@ -1,6 +1,6 @@
 use crate::models::users::User;
 use crate::schema::videos;
-use chrono::{Duration, NaiveDateTime};
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use uuid::Uuid;
 

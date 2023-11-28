@@ -1,16 +1,11 @@
 use crate::{
     db::DbPool,
-    models::{
-        pictures::{CompletePictureUserData, Picture, PictureResponse},
-        users::User,
-    },
+    models::pictures::{CompletePictureUserData, PictureResponse},
     schema::{pictures, users},
 };
 use actix_web::{web, HttpResponse};
-use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use log::{error, info};
-use serde_json::json;
+use log::error;
 use uuid::Uuid;
 
 pub async fn get_all_pictures(pool: web::Data<DbPool>) -> Result<HttpResponse, actix_web::Error> {

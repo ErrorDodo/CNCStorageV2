@@ -42,8 +42,8 @@ impl<'a> NewUser<'a> {
             password_hash,
             date_registered,
             invited_by_user_id,
-            is_admin: false,
-            is_moderator: false,
+            is_admin,
+            is_moderator,
         }
     }
 }
