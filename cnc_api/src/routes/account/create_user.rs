@@ -1,13 +1,25 @@
 use crate::models::invites::Invite;
-use crate::models::users::{NewUser, User};
+use crate::models::users::{CreateUserError, NewUser, User};
 use crate::schema::{invites, users};
 use crate::{db::DbPool, models::users::UserDTO};
-use actix_web::{web, HttpResponse};
+use actix_web::{http::StatusCode, web, HttpResponse};
 use bcrypt::{hash, DEFAULT_COST};
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
 use log::{error, info};
 use uuid::Uuid;
+
+impl From<DieselError> for CreateUserError {
+    fn from(err: DieselError) -> Self {
+        CreateUserError::DieselError(err)
+    }
+}
+
+impl From<bcrypt::BcryptError> for CreateUserError {
+    fn from(err: bcrypt::BcryptError) -> Self {
+        CreateUserError::BcryptError(err)
+    }
+}
 
 pub async fn create_user(
     user_dto: web::Json<UserDTO>,
@@ -15,64 +27,88 @@ pub async fn create_user(
 ) -> Result<HttpResponse, actix_web::Error> {
     let mut conn = pool.get().expect("couldn't get db connection from pool");
 
-    let created_user_info = conn
-        .transaction::<_, DieselError, _>(|conn| {
-            let existing_user = users::table
-                .filter(users::columns::username.eq(&user_dto.username))
-                .first::<User>(conn)
-                .optional()?;
+    let result = conn.transaction::<_, CreateUserError, _>(|conn| {
+        if users::table
+            .filter(users::columns::username.eq(&user_dto.username))
+            .first::<User>(conn)
+            .optional()?
+            .is_some()
+        {
+            return Err(CreateUserError::UsernameTaken);
+        }
 
-            if existing_user.is_some() {
-                error!("Username already taken");
-                return Err(DieselError::NotFound);
-            }
+        let invite = invites::table
+            .filter(invites::columns::invite_code.eq(&user_dto.invite_code))
+            .first::<Invite>(conn)
+            .optional()?;
 
-            let invite = invites::table
-                .filter(invites::columns::invite_code.eq(&user_dto.invite_code))
-                .first::<Invite>(conn)?;
-
+        if let Some(ref invite) = invite {
             if invite.has_been_used {
-                error!("Invite code has already been used");
-                return Err(DieselError::NotFound);
+                return Err(CreateUserError::InviteCodeUsed);
             }
+        } else {
+            // Handle the case where the invite is not found (optional)
+            return Err(CreateUserError::DieselError(DieselError::NotFound));
+        }
 
-            let hashed_password =
-                hash(&user_dto.password, DEFAULT_COST).map_err(|_| DieselError::NotFound)?;
+        let invite = invite.unwrap();
 
-            let new_user = NewUser {
-                username: &user_dto.username,
-                password_hash: &hashed_password,
-                date_registered: chrono::Utc::now().naive_utc(),
-                invited_by_user_id: Some(invite.generated_by_user_id),
-                is_admin: false,
-                is_moderator: false,
-            };
+        let hashed_password =
+            hash(&user_dto.password, DEFAULT_COST).map_err(|e| CreateUserError::BcryptError(e))?;
 
-            let user_id: Uuid = diesel::insert_into(users::table)
-                .values(&new_user)
-                .returning(users::columns::user_id)
-                .get_result(conn)?;
+        let new_user = NewUser {
+            username: &user_dto.username,
+            password_hash: &hashed_password,
+            date_registered: chrono::Utc::now().naive_utc(),
+            invited_by_user_id: Some(invite.generated_by_user_id),
+            is_admin: false,
+            is_moderator: false,
+        };
 
-            diesel::update(invites::table.find(invite.invite_id))
-                .set((
-                    invites::columns::has_been_used.eq(true),
-                    invites::columns::date_used.eq(chrono::Utc::now().naive_utc()),
-                    invites::columns::used_by_user_id.eq(user_id),
-                ))
-                .execute(conn)?;
+        let user_id: Uuid = diesel::insert_into(users::table)
+            .values(&new_user)
+            .returning(users::columns::user_id)
+            .get_result(conn)
+            .map_err(|e| CreateUserError::DieselError(e))?;
 
-            Ok((invite, user_id))
-        })
-        .map_err(|e| {
-            error!("Transaction error: {}", e);
-            actix_web::error::ErrorInternalServerError(format!("Transaction error: {}", e))
-        })?;
+        diesel::update(invites::table.find(invite.invite_id))
+            .set((
+                invites::columns::has_been_used.eq(true),
+                invites::columns::date_used.eq(chrono::Utc::now().naive_utc()),
+                invites::columns::used_by_user_id.eq(user_id),
+            ))
+            .execute(conn)
+            .map_err(|e| CreateUserError::DieselError(e))?;
 
-    let (invite, _user_id) = created_user_info;
+        Ok((invite, user_id))
+    });
 
-    info!(
-        "User Created Successfully: {}. Invite Code: {}, Generated by User ID: {}",
-        user_dto.username, invite.invite_code, invite.generated_by_user_id,
-    );
-    Ok(HttpResponse::Ok().json("User created successfully"))
+    match result {
+        Ok((invite, _user_id)) => {
+            info!(
+                "User Created Successfully: {}. Invite Code: {}, Generated by User ID: {}",
+                user_dto.username, invite.invite_code, invite.generated_by_user_id,
+            );
+            Ok(HttpResponse::Ok().json("User created successfully"))
+        }
+        Err(CreateUserError::UsernameTaken) => {
+            error!("Username already taken");
+            Ok(HttpResponse::build(StatusCode::BAD_REQUEST).body("Username already taken"))
+        }
+        Err(CreateUserError::InviteCodeUsed) => {
+            error!("Invite code has already been used");
+            Ok(HttpResponse::build(StatusCode::BAD_REQUEST)
+                .body("Invite code has already been used"))
+        }
+        Err(CreateUserError::DieselError(_)) => {
+            error!("Database transaction error");
+            Ok(HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
+                .body("Database transaction error"))
+        }
+        Err(CreateUserError::BcryptError(_)) => {
+            error!("Error hashing password");
+            Ok(HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
+                .body("Error hashing password"))
+        }
+    }
 }

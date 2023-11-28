@@ -1,6 +1,7 @@
 use crate::schema::users;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
+use diesel::result::Error as DieselError;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -38,4 +39,12 @@ pub struct UserDTO {
 pub struct UserLoginDTO {
     pub username: String,
     pub password: String,
+}
+
+#[derive(Debug)]
+pub enum CreateUserError {
+    UsernameTaken,
+    InviteCodeUsed,
+    DieselError(DieselError),
+    BcryptError(bcrypt::BcryptError),
 }
