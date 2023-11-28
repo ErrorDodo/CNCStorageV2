@@ -17,9 +17,11 @@ pub async fn upload_to_azure(
     let container_client = BlobServiceClient::new(account.clone(), storage_credentials)
         .container_client(container_name.clone());
 
+    // We use public access here so that we can access the images from the frontend
+    // We don't need it on the container level as the backend can access the containers regardless
     container_client
         .create()
-        .public_access(PublicAccess::None)
+        .public_access(PublicAccess::Blob)
         .await?;
 
     let blob_name = format!("{}", file_name);
