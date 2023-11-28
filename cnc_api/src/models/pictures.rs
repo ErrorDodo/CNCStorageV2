@@ -36,6 +36,7 @@ pub struct NewPicture {
 
 #[derive(Serialize)]
 pub struct PictureResponse {
+    pub uploaded_by_username: String,
     pub file_name: String,
     pub uploaded_by_user_id: Uuid,
     pub upload_date: NaiveDateTime,

@@ -17,31 +17,30 @@ pub async fn get_all_pictures(pool: web::Data<DbPool>) -> Result<HttpResponse, a
 
     let picture_data = pictures::table
         .inner_join(users::table.on(pictures::uploaded_by_user_id.eq(users::user_id)))
+        .select((pictures::all_columns, users::username))
         .order(pictures::upload_date.desc())
-        .load::<(Picture, User)>(&mut *conn)
+        .load::<(Picture, String)>(&mut *conn)
         .map_err(|e| {
             error!("Failed to load pictures: {}", e);
             actix_web::error::ErrorInternalServerError("Failed to load pictures")
         })?;
 
-    let mut formatted_pictures = serde_json::Map::new();
+    let picture_list: Vec<PictureResponse> = picture_data
+        .into_iter()
+        .map(|(pic, username)| PictureResponse {
+            uploaded_by_username: username,
+            file_name: pic.file_name,
+            uploaded_by_user_id: pic.uploaded_by_user_id,
+            upload_date: pic.upload_date,
+            file_url: pic.file_url,
+            file_size: pic.file_size,
+            file_format: pic.file_format,
+            resolution: pic.resolution,
+            tags: pic.tags.map(|ts| ts.into_iter().map(|tag| tag).collect()),
+        })
+        .collect();
 
-    for (pic, user) in picture_data {
-        let picture_json = json!({
-            "file_name": pic.file_name,
-            "uploaded_by_user_id": pic.uploaded_by_user_id,
-            "upload_date": pic.upload_date,
-            "file_url": pic.file_url,
-            "file_size": pic.file_size,
-            "file_format": pic.file_format,
-            "resolution": pic.resolution,
-            "tags": pic.tags.unwrap_or_default().iter().filter_map(|t| t.as_ref()).cloned().collect::<Vec<String>>(),
-        });
-
-        formatted_pictures.insert(user.username, picture_json);
-    }
-
-    Ok(HttpResponse::Ok().json(formatted_pictures))
+    Ok(HttpResponse::Ok().json(picture_list))
 }
 
 pub async fn get_pictures_by_user(
@@ -49,7 +48,6 @@ pub async fn get_pictures_by_user(
     user_id: web::Path<Uuid>,
 ) -> Result<HttpResponse, actix_web::Error> {
     let mut conn = pool.get().expect("couldn't get db connection from pool");
-    info!("Requested pictures for user {}", user_id);
 
     let user_uuid = user_id.into_inner();
 
@@ -61,12 +59,6 @@ pub async fn get_pictures_by_user(
             error!("Failed to load pictures for user {}: {}", user_uuid, e);
             actix_web::error::ErrorInternalServerError("Failed to load pictures")
         })?;
-
-    info!(
-        "Found {} pictures for user {}",
-        picture_data.len(),
-        user_uuid
-    );
 
     let picture_responses: Vec<_> = picture_data.into_iter().map(|pic| {
         json!({
@@ -82,4 +74,38 @@ pub async fn get_pictures_by_user(
     }).collect();
 
     Ok(HttpResponse::Ok().json(picture_responses))
+}
+
+pub async fn recent_upload_pictures(
+    pool: web::Data<DbPool>,
+) -> Result<HttpResponse, actix_web::Error> {
+    let mut conn = pool.get().expect("couldn't get db connection from pool");
+
+    let picture_data = pictures::table
+        .inner_join(users::table.on(pictures::uploaded_by_user_id.eq(users::user_id)))
+        .select((pictures::all_columns, users::username))
+        .order(pictures::upload_date.desc())
+        .limit(10)
+        .load::<(Picture, String)>(&mut *conn)
+        .map_err(|e| {
+            error!("Failed to load recent pictures: {}", e);
+            actix_web::error::ErrorInternalServerError("Failed to load recent pictures")
+        })?;
+
+    let picture_list: Vec<PictureResponse> = picture_data
+        .into_iter()
+        .map(|(pic, username)| PictureResponse {
+            uploaded_by_username: username,
+            file_name: pic.file_name,
+            uploaded_by_user_id: pic.uploaded_by_user_id,
+            upload_date: pic.upload_date,
+            file_url: pic.file_url,
+            file_size: pic.file_size,
+            file_format: pic.file_format,
+            resolution: pic.resolution,
+            tags: pic.tags.map(|ts| ts.into_iter().map(|tag| tag).collect()),
+        })
+        .collect();
+
+    Ok(HttpResponse::Ok().json(picture_list))
 }
