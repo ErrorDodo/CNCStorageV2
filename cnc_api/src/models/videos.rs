@@ -2,6 +2,7 @@ use crate::models::users::User;
 use crate::schema::videos;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
+use serde::Serialize;
 use uuid::Uuid;
 
 #[derive(Queryable, Identifiable, Associations)]
@@ -59,4 +60,33 @@ impl<'a> NewVideo<'a> {
             tags,
         }
     }
+}
+
+#[derive(Serialize)]
+pub struct VideoResponse {
+    pub uploaded_by_username: String,
+    pub file_name: String,
+    pub uploaded_by_user_id: Uuid,
+    pub upload_date: NaiveDateTime,
+    pub file_url: String,
+    pub file_size: i64,
+    pub file_format: String,
+    pub duration: i64,
+    pub resolution: String,
+    pub tags: Option<Vec<Option<String>>>,
+}
+
+#[derive(Queryable, Debug)]
+pub struct CompleteVideoUserData {
+    pub video_id: Uuid,
+    pub file_name: String,
+    pub uploaded_by_user_id: Uuid,
+    pub upload_date: NaiveDateTime,
+    pub file_url: String,
+    pub file_size: i64,
+    pub file_format: String,
+    pub duration: i64,
+    pub resolution: String,
+    pub tags: Option<Vec<Option<String>>>,
+    pub username: String,
 }
