@@ -31,6 +31,28 @@ pub fn generate_jwt(user_id: Uuid, username: String) -> String {
     .expect("Failed to generate token")
 }
 
+pub fn generate_refresh_token(user_id: Uuid, username: String) -> String {
+    let expiration = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards")
+        .as_secs()
+        + 60 * 60 * 24 * 30; // For example, 30 days expiry
+
+    let claims = Claims {
+        sub: user_id,
+        exp: expiration as usize,
+        username: username,
+    };
+
+    let secret_key = env::var("JWT_SECRET_KEY").expect("JWT_SECRET_KEY must be set");
+    encode(
+        &Header::default(),
+        &claims,
+        &EncodingKey::from_secret(secret_key.as_ref()),
+    )
+    .expect("Failed to generate token")
+}
+
 pub async fn validate_jwt_token(auth: Option<BearerAuth>) -> Result<Claims, AuthError> {
     let secret_key = env::var("JWT_SECRET_KEY").expect("JWT_SECRET_KEY must be set");
     let validation = Validation::default();
@@ -42,6 +64,24 @@ pub async fn validate_jwt_token(auth: Option<BearerAuth>) -> Result<Claims, Auth
 
     match decode::<Claims>(
         &token,
+        &DecodingKey::from_secret(secret_key.as_ref()),
+        &validation,
+    ) {
+        Ok(token_data) => Ok(token_data.claims),
+        Err(error) => match *error.kind() {
+            ErrorKind::InvalidToken => Err(AuthError::JwtInvalid), // Token is invalid
+            ErrorKind::ExpiredSignature => Err(AuthError::JwtInvalid), // Expired Token
+            _ => Err(AuthError::JwtInvalid),                       // Some other error
+        },
+    }
+}
+
+pub fn validate_refresh_token(token: &str) -> Result<Claims, AuthError> {
+    let secret_key = env::var("JWT_SECRET_KEY").expect("JWT_SECRET_KEY must be set");
+    let validation = Validation::default();
+
+    match decode::<Claims>(
+        token,
         &DecodingKey::from_secret(secret_key.as_ref()),
         &validation,
     ) {

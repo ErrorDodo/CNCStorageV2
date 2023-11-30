@@ -7,3 +7,14 @@ pub struct Claims {
     pub exp: usize,       // Expiry (as a timestamp)
     pub username: String, // Username
 }
+
+#[derive(Deserialize)]
+pub struct RefreshTokenRequest {
+    pub refresh_token: String,
+}
+
+#[derive(Serialize)]
+pub struct AuthTokens {
+    pub access_token: String,
+    pub refresh_token: String,
+}

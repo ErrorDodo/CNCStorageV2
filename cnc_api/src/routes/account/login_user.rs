@@ -1,8 +1,14 @@
 use crate::{
     db::DbPool,
-    models::users::{User, UserLoginDTO},
+    models::{
+        jwtmodel::AuthTokens,
+        users::{User, UserLoginDTO},
+    },
     schema::users::dsl::*,
-    utils::{generate_auth_token::generate_jwt, log_db::log_event},
+    utils::{
+        generate_auth_token::{generate_jwt, generate_refresh_token},
+        log_db::log_event,
+    },
 };
 use actix_web::{web, HttpResponse, Result};
 use bcrypt::verify;
@@ -22,7 +28,12 @@ pub async fn login_user(
         Ok(user) => {
             if verify(&login_dto.password, &user.password_hash).unwrap_or(false) {
                 let token = generate_jwt(user.id, login_dto.username.clone());
-                info!("Login successful: {}", login_dto.username);
+                let refresh_token = generate_refresh_token(user.id, login_dto.username.clone());
+
+                let return_json = AuthTokens {
+                    access_token: token,
+                    refresh_token: refresh_token,
+                };
 
                 // Log successful login
                 log_event(
@@ -33,7 +44,7 @@ pub async fn login_user(
                 )
                 .await?;
 
-                Ok(HttpResponse::Ok().json(token))
+                Ok(HttpResponse::Ok().json(return_json))
             } else {
                 info!("Login failed: Invalid username or password");
 
