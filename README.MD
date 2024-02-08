@@ -5,6 +5,7 @@ This is a website and api for hosting images and videos on the cloud, put it sim
 
 ## The plan going forward
 I don't see myself finishing this in the near future. This project was just for me to mess around with Rust and get a general idea on how it works.
+This may be something I port over to a language I am more familar with like C#
 
 ## Issues
 
